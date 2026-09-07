@@ -2,6 +2,12 @@
 
 Save any link — a podcast, a YouTube video, a Spotify audiobook, a restaurant, a LinkedIn or X post — with its title, image, and a preview of the content pulled in automatically, so you don't forget about it. Mark things done once you've actually checked them out. Add links from inside the app, or straight from the Share Sheet in Safari/YouTube/Instagram/etc.
 
+<p>
+  <img src="screenshots/the-stash.png" width="320" alt="The Stash list, grouped by category, with auto-fetched titles/images/dates">
+</p>
+
+*(Screenshot uses public sample links, not real personal data.)*
+
 ## One-time setup
 
 Same as PriceTrack:
