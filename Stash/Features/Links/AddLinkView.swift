@@ -5,6 +5,7 @@ import UIKit
 struct AddLinkView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Query private var allLinks: [SavedLink]
 
     @State private var urlText = ""
     @State private var isFetching = false
@@ -16,6 +17,11 @@ struct AddLinkView: View {
     @State private var hasFetched = false
     @State private var category: Category = .other
     @State private var note = ""
+    @State private var selectedTags: [String] = []
+
+    private var availableTags: [String] {
+        Set(allLinks.flatMap(\.tags)).sorted()
+    }
 
     private var canSave: Bool {
         !urlText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && hasFetched
@@ -85,6 +91,10 @@ struct AddLinkView: View {
                         }
                         TextField("Note (optional)", text: $note, axis: .vertical)
                     }
+
+                    Section("Tags") {
+                        TagDropdownField(availableTags: availableTags, selectedTags: $selectedTags)
+                    }
                 }
             }
             .navigationTitle("Add Link")
@@ -128,7 +138,8 @@ struct AddLinkView: View {
             category: category,
             note: note,
             snippet: fetchedSnippet ?? "",
-            publishedAt: fetchedDate
+            publishedAt: fetchedDate,
+            tags: selectedTags
         )
         modelContext.insert(link)
         dismiss()

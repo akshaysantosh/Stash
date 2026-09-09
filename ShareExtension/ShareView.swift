@@ -16,6 +16,8 @@ struct ShareView: View {
     @State private var fetchedSnippet: String?
     @State private var fetchedDate: Date?
     @State private var category: Category = .other
+    @State private var availableTags: [String] = []
+    @State private var selectedTags: [String] = []
     @State private var saveError: String?
 
     var body: some View {
@@ -34,6 +36,7 @@ struct ShareView: View {
                 }
         }
         .task {
+            loadAvailableTags()
             sharedURL = await extractURL()
             isLoadingURL = false
             if let sharedURL {
@@ -87,6 +90,14 @@ struct ShareView: View {
                             .pickerStyle(.menu)
                             .tint(Color.accent)
                         }
+                    }
+
+                    CardView {
+                        Text("Tags")
+                            .font(AppFont.body())
+                            .foregroundStyle(Color.bodyText)
+                        TagDropdownField(availableTags: availableTags, selectedTags: $selectedTags)
+                            .padding(.top, 4)
                     }
 
                     if let saveError {
@@ -167,28 +178,42 @@ struct ShareView: View {
         isFetchingMetadata = false
     }
 
+    /// Both saving and loading tag suggestions need a context onto the shared App Group store —
+    /// this is created fresh each time rather than held in state, since the extension's process
+    /// is short-lived and there's no other view that needs a long-lived container.
+    private func makeSharedContext() throws -> ModelContext? {
+        guard let groupURL = AppGroup.containerURL else { return nil }
+        let schema = Schema([SavedLink.self])
+        let configuration = ModelConfiguration(
+            schema: schema,
+            url: groupURL.appendingPathComponent("Stash.sqlite"),
+            cloudKitDatabase: .none
+        )
+        let container = try ModelContainer(for: schema, configurations: [configuration])
+        return ModelContext(container)
+    }
+
+    private func loadAvailableTags() {
+        guard let context = try? makeSharedContext() else { return }
+        guard let links = try? context.fetch(FetchDescriptor<SavedLink>()) else { return }
+        availableTags = Set(links.flatMap(\.tags)).sorted()
+    }
+
     private func save() {
         guard let sharedURL else { return }
-        guard let groupURL = AppGroup.containerURL else {
-            saveError = "Couldn't reach Stash's shared storage — the App Group isn't set up correctly."
-            return
-        }
         do {
-            let schema = Schema([SavedLink.self])
-            let configuration = ModelConfiguration(
-                schema: schema,
-                url: groupURL.appendingPathComponent("Stash.sqlite"),
-                cloudKitDatabase: .none
-            )
-            let container = try ModelContainer(for: schema, configurations: [configuration])
-            let context = ModelContext(container)
+            guard let context = try makeSharedContext() else {
+                saveError = "Couldn't reach Stash's shared storage — the App Group isn't set up correctly."
+                return
+            }
             let link = SavedLink(
                 url: sharedURL.absoluteString,
                 title: fetchedTitle.isEmpty ? sharedURL.absoluteString : fetchedTitle,
                 imageData: fetchedImageData,
                 category: category,
                 snippet: fetchedSnippet ?? "",
-                publishedAt: fetchedDate
+                publishedAt: fetchedDate,
+                tags: selectedTags
             )
             context.insert(link)
             try context.save()
