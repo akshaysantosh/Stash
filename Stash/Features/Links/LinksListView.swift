@@ -177,14 +177,9 @@ struct LinksListView: View {
 
     private var tagFilterRow: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                filterChip(title: "All tags", isSelected: selectedTag == nil) {
-                    selectedTag = nil
-                }
+            HStack(spacing: 6) {
                 ForEach(allTags, id: \.self) { tag in
-                    filterChip(title: "#\(tag)", isSelected: selectedTag == tag) {
-                        selectedTag = tag
-                    }
+                    tagChip(tag)
                 }
             }
             .padding(.horizontal, 16)
@@ -199,6 +194,26 @@ struct LinksListView: View {
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
                 .background(Capsule().fill(isSelected ? Color.accent : Color.chipBg))
+        }
+        .buttonStyle(.plain)
+    }
+
+    /// Deliberately lighter-weight than `filterChip` — outlined rather than filled, smaller
+    /// text — so the tag row reads as a secondary refinement under the primary category filter
+    /// rather than a second row of equally-weighted pills. Tapping the active tag clears it,
+    /// so there's no separate "All tags" chip to make room for.
+    private func tagChip(_ tag: String) -> some View {
+        let isSelected = selectedTag == tag
+        return Button {
+            selectedTag = isSelected ? nil : tag
+        } label: {
+            Text("#\(tag)")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(isSelected ? Color.accent : Color.textMuted)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(Capsule().fill(isSelected ? Color.accent.opacity(0.12) : Color.clear))
+                .overlay(Capsule().stroke(isSelected ? Color.accent.opacity(0.4) : Color.borderCard, lineWidth: 1))
         }
         .buttonStyle(.plain)
     }
