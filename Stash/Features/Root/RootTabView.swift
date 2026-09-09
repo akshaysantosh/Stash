@@ -11,9 +11,9 @@ struct RootTabView: View {
             .tabItem { Label("The Stash", systemImage: "bookmark.fill") }
 
             NavigationStack {
-                LinksListView(isDone: true, title: "Checked Out")
+                LinksListView(isDone: true, title: "Vault")
             }
-            .tabItem { Label("Checked Out", systemImage: "checkmark.circle.fill") }
+            .tabItem { Label("Vault", systemImage: "archivebox.fill") }
 
             NavigationStack {
                 SettingsView()

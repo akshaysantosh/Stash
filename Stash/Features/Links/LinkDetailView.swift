@@ -38,7 +38,7 @@ struct LinkDetailView: View {
                                 Chip(text: link.category.displayName)
                                 Spacer()
                                 if link.isDone {
-                                    Chip(text: "Checked out", style: .success)
+                                    Chip(text: "Vaulted", style: .success)
                                 }
                             }
                             Text(link.title)

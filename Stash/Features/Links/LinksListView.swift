@@ -68,13 +68,13 @@ struct LinksListView: View {
             return "Nothing in \(selectedCategory.displayName) yet."
         }
         return isDone
-            ? "Nothing checked off yet. Mark a link done from The Stash once you've gotten to it."
+            ? "Your Vault is empty. Check off a link from The Stash to keep it here."
             : "Nothing saved yet. Tap + to stash a podcast, video, restaurant, or anything else worth coming back to."
     }
 
     private var emptyIcon: String {
         if let selectedCategory { return selectedCategory.symbolName }
-        return isDone ? "checkmark.seal" : "bookmark.fill"
+        return isDone ? "archivebox" : "bookmark.fill"
     }
 
     var body: some View {
