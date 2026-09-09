@@ -26,7 +26,7 @@ Stash runs **fully local** by design (no iCloud/CloudKit) — a free Apple ID ca
 
 ## How it works
 
-- **The Stash / Checked Out** tabs — your saved links, split by whether you've gotten to them yet. Filter by category (Watch / Listen / Read / Socials / Visit / Buy / Other) with the chip row up top; the header shows a live count of what's visible.
+- **The Stash / Vault** tabs — your saved links, split by whether you've gotten to them yet. Marking a link done moves it to the Vault — a keep pile, not a delete pile. Filter by category (Watch / Listen / Read / Socials / Visit / Buy / Other) with the chip row up top; the header shows a live count of what's visible.
 - **Add a link** (+ button, or the Share Sheet from any app) — Stash fetches a title and thumbnail automatically. YouTube and X/Twitter go through their own public oEmbed APIs for accurate titles and (for X) the actual post text; everything else uses Apple's LinkPresentation framework, the same engine behind Messages/Safari link previews. LinkedIn/Instagram/Facebook posts get their poster's name as the title and, best-effort, a caption preview. Category is guessed from the URL/domain and always editable. A publish date is picked up where the source exposes one (reliable for X; best-effort elsewhere via common meta tags).
 - **Share Sheet**: tap *Share* from inside YouTube/Instagram/Safari/etc. and send straight to Stash — no need to copy/paste a URL. Handles both proper link shares and apps (like YouTube) that share plain text with a URL embedded in it.
 - **Tap a link** to see the full preview — the image itself is the tap target to open the link (Safari/the relevant app) — plus any fetched post-preview text, your own note, and category/done controls.
