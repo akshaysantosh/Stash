@@ -53,7 +53,7 @@ struct EditLinkView: View {
                     }
 
                     if !tags.isEmpty {
-                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 90), spacing: 6)], alignment: .leading, spacing: 6) {
+                        FlowLayout(horizontalSpacing: 6, verticalSpacing: 6) {
                             ForEach(tags, id: \.self) { tag in
                                 tagChip(tag, removable: true)
                             }
@@ -66,7 +66,7 @@ struct EditLinkView: View {
                             Text("Previously used")
                                 .font(AppFont.caption())
                                 .foregroundStyle(Color.textMuted)
-                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 90), spacing: 6)], alignment: .leading, spacing: 6) {
+                            FlowLayout(horizontalSpacing: 6, verticalSpacing: 6) {
                                 ForEach(suggestedTags, id: \.self) { tag in
                                     tagChip(tag, removable: false)
                                 }

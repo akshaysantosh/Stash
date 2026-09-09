@@ -57,7 +57,7 @@ struct LinkDetailView: View {
                             .padding(.top, 8)
 
                             if !link.tags.isEmpty {
-                                LazyVGrid(columns: [GridItem(.adaptive(minimum: 60), spacing: 6)], alignment: .leading, spacing: 6) {
+                                FlowLayout(horizontalSpacing: 6, verticalSpacing: 6) {
                                     ForEach(link.tags, id: \.self) { tag in
                                         Chip(text: tag)
                                     }
