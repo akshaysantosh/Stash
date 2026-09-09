@@ -33,6 +33,12 @@ struct LinkRow: View {
                         .foregroundStyle(Color.textMuted)
                         .lineLimit(2)
                 }
+                if !link.tags.isEmpty {
+                    Text(link.tags.map { "#\($0)" }.joined(separator: "  "))
+                        .font(AppFont.caption())
+                        .foregroundStyle(Color.accent)
+                        .lineLimit(1)
+                }
             }
             Spacer(minLength: 0)
         }

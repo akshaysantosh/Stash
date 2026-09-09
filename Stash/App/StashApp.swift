@@ -1,9 +1,12 @@
 import SwiftUI
 import SwiftData
 import UIKit
+import UserNotifications
 
 @main
 struct StashApp: App {
+    @StateObject private var notificationRouter = NotificationRouter()
+
     let modelContainer: ModelContainer = {
         let schema = Schema([SavedLink.self])
         let configuration: ModelConfiguration
@@ -37,11 +40,14 @@ struct StashApp: App {
         tabAppearance.backgroundColor = UIColor(Color.bgCard)
         UITabBar.appearance().standardAppearance = tabAppearance
         UITabBar.appearance().scrollEdgeAppearance = tabAppearance
+
+        UNUserNotificationCenter.current().delegate = notificationRouter
     }
 
     var body: some Scene {
         WindowGroup {
             RootTabView()
+                .environmentObject(notificationRouter)
                 .preferredColorScheme(.light)
                 .tint(Color.accent)
         }

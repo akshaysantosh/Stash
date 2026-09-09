@@ -8,6 +8,7 @@ struct LinksListView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var showingAddLink = false
     @State private var selectedCategory: Category?
+    @State private var selectedTag: String?
 
     init(isDone: Bool, title: String) {
         self.title = title
@@ -27,16 +28,26 @@ struct LinksListView: View {
         }
     }
 
+    private var allTags: [String] {
+        Set(links.flatMap(\.tags)).sorted()
+    }
+
     private var filteredLinks: [SavedLink] {
-        guard let selectedCategory else { return links }
-        return links.filter { $0.category == selectedCategory }
+        var result = links
+        if let selectedCategory {
+            result = result.filter { $0.category == selectedCategory }
+        }
+        if let selectedTag {
+            result = result.filter { $0.tags.contains(selectedTag) }
+        }
+        return result
     }
 
     private var rows: [Row] {
         guard selectedCategory == nil else {
             return filteredLinks.map { .link($0) }
         }
-        let grouped = Dictionary(grouping: links, by: { $0.category })
+        let grouped = Dictionary(grouping: filteredLinks, by: { $0.category })
         var result: [Row] = []
         for category in Category.allCases {
             guard let items = grouped[category], !items.isEmpty else { continue }
@@ -47,6 +58,12 @@ struct LinksListView: View {
     }
 
     private var emptyMessage: String {
+        if let selectedTag {
+            if let selectedCategory {
+                return "Nothing tagged #\(selectedTag) in \(selectedCategory.displayName) yet."
+            }
+            return "Nothing tagged #\(selectedTag) yet."
+        }
         if let selectedCategory {
             return "Nothing in \(selectedCategory.displayName) yet."
         }
@@ -74,7 +91,12 @@ struct LinksListView: View {
 
             categoryFilterRow
                 .padding(.top, 4)
-                .padding(.bottom, 8)
+                .padding(.bottom, allTags.isEmpty ? 8 : 4)
+
+            if !allTags.isEmpty {
+                tagFilterRow
+                    .padding(.bottom, 8)
+            }
 
             if filteredLinks.isEmpty {
                 EmptyStateView(symbolName: emptyIcon, message: emptyMessage)
@@ -146,6 +168,22 @@ struct LinksListView: View {
                 ForEach(Category.allCases) { category in
                     filterChip(title: category.displayName, isSelected: selectedCategory == category) {
                         selectedCategory = category
+                    }
+                }
+            }
+            .padding(.horizontal, 16)
+        }
+    }
+
+    private var tagFilterRow: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                filterChip(title: "All tags", isSelected: selectedTag == nil) {
+                    selectedTag = nil
+                }
+                ForEach(allTags, id: \.self) { tag in
+                    filterChip(title: "#\(tag)", isSelected: selectedTag == tag) {
+                        selectedTag = tag
                     }
                 }
             }

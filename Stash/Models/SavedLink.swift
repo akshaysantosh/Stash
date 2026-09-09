@@ -13,6 +13,7 @@ final class SavedLink {
     var note: String = ""
     var snippet: String = ""
     var publishedAt: Date? = nil
+    var tags: [String] = []
 
     init(
         url: String,
@@ -21,7 +22,8 @@ final class SavedLink {
         category: Category = .other,
         note: String = "",
         snippet: String = "",
-        publishedAt: Date? = nil
+        publishedAt: Date? = nil,
+        tags: [String] = []
     ) {
         self.id = UUID()
         self.url = url
@@ -33,6 +35,7 @@ final class SavedLink {
         self.note = note
         self.snippet = snippet
         self.publishedAt = publishedAt
+        self.tags = tags
     }
 
     var category: Category {

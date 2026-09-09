@@ -8,6 +8,7 @@ struct LinkDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
     @State private var showingDeleteConfirm = false
+    @State private var showingEdit = false
 
     var body: some View {
         ScrollView {
@@ -54,6 +55,15 @@ struct LinkDetailView: View {
                             .font(AppFont.caption())
                             .foregroundStyle(Color.textFaint)
                             .padding(.top, 8)
+
+                            if !link.tags.isEmpty {
+                                LazyVGrid(columns: [GridItem(.adaptive(minimum: 60), spacing: 6)], alignment: .leading, spacing: 6) {
+                                    ForEach(link.tags, id: \.self) { tag in
+                                        Chip(text: tag)
+                                    }
+                                }
+                                .padding(.top, 8)
+                            }
                         }
                     }
                 }
@@ -85,6 +95,14 @@ struct LinkDetailView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
+                    showingEdit = true
+                } label: {
+                    Image(systemName: "pencil")
+                        .foregroundStyle(Color.accent)
+                }
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
                     link.isDone.toggle()
                 } label: {
                     Image(systemName: link.isDone ? "checkmark.circle.fill" : "checkmark.circle")
@@ -98,6 +116,9 @@ struct LinkDetailView: View {
                     Image(systemName: "trash")
                 }
             }
+        }
+        .sheet(isPresented: $showingEdit) {
+            EditLinkView(link: link)
         }
         .confirmationDialog("Delete this link?", isPresented: $showingDeleteConfirm, titleVisibility: .visible) {
             Button("Delete", role: .destructive) {
