@@ -3,7 +3,7 @@
 Save any link — a podcast, a YouTube video, a Spotify audiobook, a restaurant, a LinkedIn or X post — with its title, image, and a preview of the content pulled in automatically, so you don't forget about it. Tag it, edit it, mark it done once you've actually checked it out, and let Stash nudge you to revisit it later. Add links from inside the app, or straight from the Share Sheet in Safari/YouTube/Instagram/etc.
 
 <p>
-  <img src="screenshots/the-stash.png" width="260" alt="The Stash list, grouped by category, with auto-fetched titles/images and tag chips">
+  <img src="screenshots/the-stash-mix.jpg" width="260" alt="The Stash list showing a Watch, Listen, and Read item together, each with its own tag — AI, product, and storytelling">
   <img src="screenshots/link-detail.png" width="260" alt="Link detail view showing tags and a Vaulted badge">
   <img src="screenshots/vault.png" width="260" alt="The Vault, filtered by tag">
 </p>
@@ -12,7 +12,7 @@ Save any link — a podcast, a YouTube video, a Spotify audiobook, a restaurant,
   <img src="screenshots/settings.png" width="260" alt="Settings screen configuring daily recall">
 </p>
 
-*(Screenshots use public sample links — episodes of Lenny's Podcast and Planet Money — not real personal data.)*
+*(Screenshots use public sample links — Lenny's Podcast, Planet Money, Andrew Ng's "AI for Everyone," and a Substack essay on narrative structure — not real personal data.)*
 
 ## How it works
 
