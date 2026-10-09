@@ -38,19 +38,6 @@ enum Category: String, Codable, CaseIterable, Identifiable {
         }
     }
 
-    /// A distinct warm-palette tone per category, used as a subtle left-edge accent in list rows.
-    var accentColor: Color {
-        switch self {
-        case .watch: return .accent
-        case .listen: return .accentSuccess
-        case .read: return .chipAltText
-        case .socials: return .calloutInfoText
-        case .visit: return .calloutWarnText
-        case .buy: return .categoryGold
-        case .other: return .categoryClay
-        }
-    }
-
     /// Best-effort guess from the URL's host — always overridable by the user.
     static func guess(for url: URL) -> Category {
         let host = (url.host ?? "").lowercased()

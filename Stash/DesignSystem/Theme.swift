@@ -1,14 +1,18 @@
 import SwiftUI
 
-/// Akshay's personal design system: warm cream/terracotta palette, card-based layout.
+/// Akshay's personal design system: warm cream/terracotta palette, calm and editorial.
 /// Light-mode only by design (the source system is `color-scheme: light`) — see StashApp.
-/// Shared verbatim with PriceTrack so both apps look and feel identical.
+/// Started as a verbatim copy of PriceTrack's theme; Stash's copy has since diverged on purpose
+/// (text styles for Dynamic Type, spacing/radius scales, a darker muted text colour).
+///
+/// Accent rule: terracotta is for the one primary action on a screen, the selected state, and
+/// links — not for decoration.
 extension Color {
     static let ink = Color(hex: "#1a1815")
     static let bodyText = Color(hex: "#2b2926")
     static let textSecondary = Color(hex: "#6b6862")
-    static let textMuted = Color(hex: "#8f8b84")
-    static let textFaint = Color(hex: "#96918a")
+    /// Metadata, hints and tags. Darkened from the old #8f8b84 so small text stays readable on cream.
+    static let textMuted = Color(hex: "#7a766f")
     static let bgPage = Color(hex: "#f7f6f3")
     static let bgCard = Color(hex: "#ffffff")
     static let borderCard = Color(hex: "#e5e2da")
@@ -24,25 +28,44 @@ extension Color {
     static let calloutWarnBg = Color(hex: "#fdf0ea")
     static let calloutWarnBorder = Color(hex: "#f0c1a0")
     static let calloutWarnText = Color(hex: "#9a4a1f")
-
-    // Extra warm-palette tones used only for per-category accents (Category.accentColor).
-    static let categoryGold = Color(hex: "#c98a2b")
-    static let categoryClay = Color(hex: "#a67c5a")
 }
 
+/// Built on text styles so everything scales with Dynamic Type.
 enum AppFont {
-    static func pageTitle() -> Font { .system(size: 25, weight: .heavy) }
-    static func sectionLabel() -> Font { .system(size: 13, weight: .bold) }
-    static func cardHeadline() -> Font { .system(size: 17, weight: .bold) }
-    static func heroNumber(_ size: CGFloat = 25) -> Font { .system(size: size, weight: .heavy) }
-    static func body() -> Font { .system(size: 14) }
-    static func secondaryDetail() -> Font { .system(size: 13.5) }
-    static func caption() -> Font { .system(size: 12) }
+    static func detailTitle() -> Font { .title2.weight(.bold) }
+    static func cardHeadline() -> Font { .headline.weight(.bold) }
+    static func rowTitle() -> Font { .callout.weight(.semibold) }
+    static func sectionLabel() -> Font { .caption.weight(.semibold) }
+    static func button() -> Font { .callout.weight(.semibold) }
+    static func chip() -> Font { .footnote.weight(.semibold) }
+    static func body() -> Font { .subheadline }
+    static func secondaryDetail() -> Font { .footnote }
+    static func caption() -> Font { .caption }
+}
+
+enum AppSpacing {
+    static let xs: CGFloat = 4
+    static let s: CGFloat = 8
+    static let m: CGFloat = 12
+    static let l: CGFloat = 16
+    static let xl: CGFloat = 24
+    static let xxl: CGFloat = 32
+}
+
+enum AppRadius {
+    static let thumb: CGFloat = 14
+    static let button: CGFloat = 14
+    static let card: CGFloat = 16
+    static let banner: CGFloat = 12
 }
 
 enum AppMetrics {
-    static let cardRadius: CGFloat = 16
-    static let statRadius: CGFloat = 14
-    static let cardPadding: CGFloat = 16
-    static let cardSpacing: CGFloat = 16
+    static let cardRadius = AppRadius.card
+    static let cardPadding = AppSpacing.l
+    static let cardSpacing = AppSpacing.l
+}
+
+extension String {
+    /// Tags are stored bare ("ai") and always displayed as "#ai", everywhere.
+    var asTag: String { "#\(self)" }
 }

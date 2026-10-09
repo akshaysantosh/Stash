@@ -8,6 +8,11 @@ struct StashApp: App {
     @StateObject private var notificationRouter = NotificationRouter()
 
     let modelContainer: ModelContainer = {
+        #if DEBUG
+        if CommandLine.arguments.contains("-seedSampleData") {
+            return SampleData.makeContainer()
+        }
+        #endif
         let schema = Schema([SavedLink.self])
         let configuration: ModelConfiguration
         if let groupURL = AppGroup.containerURL {
@@ -27,20 +32,8 @@ struct StashApp: App {
     }()
 
     init() {
-        let navAppearance = UINavigationBarAppearance()
-        navAppearance.configureWithOpaqueBackground()
-        navAppearance.backgroundColor = UIColor(Color.bgPage)
-        navAppearance.titleTextAttributes = [.foregroundColor: UIColor(Color.ink)]
-        navAppearance.largeTitleTextAttributes = [.foregroundColor: UIColor(Color.ink)]
-        UINavigationBar.appearance().standardAppearance = navAppearance
-        UINavigationBar.appearance().scrollEdgeAppearance = navAppearance
-
-        let tabAppearance = UITabBarAppearance()
-        tabAppearance.configureWithOpaqueBackground()
-        tabAppearance.backgroundColor = UIColor(Color.bgCard)
-        UITabBar.appearance().standardAppearance = tabAppearance
-        UITabBar.appearance().scrollEdgeAppearance = tabAppearance
-
+        // Navigation and tab bars use the system appearance (large titles, liquid glass on newer
+        // iOS); the cream background comes from each screen's own `.background(Color.bgPage)`.
         UNUserNotificationCenter.current().delegate = notificationRouter
     }
 

@@ -10,111 +10,95 @@ struct LinkDetailView: View {
     @State private var showingDeleteConfirm = false
     @State private var showingEdit = false
 
+    private var meta: String {
+        var parts = [link.category.displayName, link.displayHost]
+        if let publishedAt = link.publishedAt {
+            parts.append(publishedAt.formatted(date: .abbreviated, time: .omitted))
+        }
+        return parts.joined(separator: " · ")
+    }
+
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: AppMetrics.cardSpacing) {
-                Button(action: openLink) {
-                    VStack(alignment: .leading, spacing: 12) {
-                        if let data = link.imageData, let uiImage = UIImage(data: data) {
-                            ZStack(alignment: .bottomTrailing) {
+            VStack(alignment: .leading, spacing: AppSpacing.l) {
+                if let data = link.imageData, let uiImage = UIImage(data: data) {
+                    Button(action: openLink) {
+                        Color.clear
+                            .aspectRatio(16 / 9, contentMode: .fit)
+                            .overlay(
                                 Image(uiImage: uiImage)
                                     .resizable()
                                     .scaledToFill()
-                                    .frame(height: 320)
-                                    .frame(maxWidth: .infinity)
-                                    .clipped()
-                                openIndicator
-                                    .padding(10)
-                            }
-                            .clipShape(RoundedRectangle(cornerRadius: AppMetrics.cardRadius))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: AppMetrics.cardRadius)
-                                    .stroke(Color.borderCard, lineWidth: 1)
                             )
-                        }
+                            .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
+                    }
+                    .buttonStyle(.plain)
+                }
 
-                        CardView {
-                            HStack {
-                                Chip(text: link.category.displayName)
-                                Spacer()
-                                if link.isDone {
-                                    Chip(text: "Vaulted", style: .success)
-                                }
-                            }
-                            Text(link.title)
-                                .font(AppFont.cardHeadline())
-                                .foregroundStyle(Color.ink)
-                                .padding(.top, 6)
-                            HStack(spacing: 4) {
-                                if let publishedAt = link.publishedAt {
-                                    Text(publishedAt.formatted(date: .abbreviated, time: .omitted))
-                                    Text("·")
-                                }
-                                Text(link.displayHost)
-                            }
+                VStack(alignment: .leading, spacing: AppSpacing.s) {
+                    Text(link.title.isEmpty ? link.displayHost : link.title)
+                        .font(AppFont.detailTitle())
+                        .foregroundStyle(Color.ink)
+                    Text(meta)
+                        .font(AppFont.secondaryDetail())
+                        .foregroundStyle(Color.textSecondary)
+                    if link.isDone {
+                        Label("In the Vault", systemImage: "archivebox")
                             .font(AppFont.caption())
-                            .foregroundStyle(Color.textFaint)
-                            .padding(.top, 8)
+                            .foregroundStyle(Color.textMuted)
+                    }
+                }
 
-                            if !link.tags.isEmpty {
-                                FlowLayout(horizontalSpacing: 6, verticalSpacing: 6) {
-                                    ForEach(link.tags, id: \.self) { tag in
-                                        Chip(text: tag)
-                                    }
-                                }
-                                .padding(.top, 8)
-                            }
+                if !link.tags.isEmpty {
+                    FlowLayout(horizontalSpacing: AppSpacing.s - 2, verticalSpacing: AppSpacing.s - 2) {
+                        ForEach(link.tags, id: \.self) { tag in
+                            Chip(text: tag.asTag)
                         }
                     }
                 }
-                .buttonStyle(.plain)
+
+                Button(action: openLink) {
+                    Label("Open link", systemImage: "arrow.up.right")
+                }
+                .buttonStyle(.solidAccent)
 
                 if !link.snippet.isEmpty {
-                    SectionLabel(text: "Post preview")
-                    CardView {
-                        Text(link.snippet)
-                            .font(AppFont.body())
-                            .foregroundStyle(Color.bodyText)
-                    }
+                    textSection("About", text: link.snippet)
                 }
-
                 if !link.note.isEmpty {
-                    SectionLabel(text: "Note")
-                    CardView {
-                        Text(link.note)
-                            .font(AppFont.body())
-                            .foregroundStyle(Color.bodyText)
-                    }
+                    textSection("Your note", text: link.note)
                 }
             }
-            .padding(16)
+            .padding(AppSpacing.l)
         }
         .background(Color.bgPage)
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    showingEdit = true
+                Menu {
+                    Button {
+                        showingEdit = true
+                    } label: {
+                        Label("Edit", systemImage: "pencil")
+                    }
+                    Button {
+                        link.isDone.toggle()
+                    } label: {
+                        Label(link.isDone ? "Move back to Stash" : "Mark done",
+                              systemImage: link.isDone ? "arrow.uturn.left" : "checkmark.circle")
+                    }
+                    Divider()
+                    Button(role: .destructive) {
+                        showingDeleteConfirm = true
+                    } label: {
+                        Label("Delete", systemImage: "trash")
+                    }
                 } label: {
-                    Image(systemName: "pencil")
-                        .foregroundStyle(Color.accent)
+                    Image(systemName: "ellipsis.circle")
+                        .foregroundStyle(Color.ink)
                 }
-            }
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    link.isDone.toggle()
-                } label: {
-                    Image(systemName: link.isDone ? "checkmark.circle.fill" : "checkmark.circle")
-                        .foregroundStyle(Color.accentSuccess)
-                }
-            }
-            ToolbarItem(placement: .topBarTrailing) {
-                Button(role: .destructive) {
-                    showingDeleteConfirm = true
-                } label: {
-                    Image(systemName: "trash")
-                }
+                .accessibilityLabel("More actions")
             }
         }
         .sheet(isPresented: $showingEdit) {
@@ -128,12 +112,13 @@ struct LinkDetailView: View {
         }
     }
 
-    private var openIndicator: some View {
-        Image(systemName: "arrow.up.right")
-            .font(.system(size: 13, weight: .bold))
-            .foregroundStyle(Color.ink)
-            .padding(8)
-            .background(Circle().fill(Color.bgCard.opacity(0.9)))
+    private func textSection(_ label: String, text: String) -> some View {
+        VStack(alignment: .leading, spacing: AppSpacing.s) {
+            SectionLabel(text: label)
+            Text(text)
+                .font(AppFont.body())
+                .foregroundStyle(Color.bodyText)
+        }
     }
 
     private func openLink() {

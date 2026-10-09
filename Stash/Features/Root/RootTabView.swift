@@ -14,11 +14,6 @@ struct RootTabView: View {
                 LinksListView(isDone: true, title: "Vault")
             }
             .tabItem { Label("Vault", systemImage: "archivebox.fill") }
-
-            NavigationStack {
-                SettingsView()
-            }
-            .tabItem { Label("Settings", systemImage: "gearshape.fill") }
         }
         .tint(Color.accent)
         .sheet(item: Binding(

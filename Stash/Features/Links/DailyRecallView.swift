@@ -21,7 +21,7 @@ struct DailyRecallView: View {
         NavigationStack {
             VStack(alignment: .leading, spacing: AppMetrics.cardSpacing) {
                 if let current {
-                    Chip(text: "#\(tag)", style: .alt)
+                    Chip(text: tag.asTag, style: .alt)
 
                     if let data = current.imageData, let uiImage = UIImage(data: data) {
                         Image(uiImage: uiImage)
@@ -39,7 +39,7 @@ struct DailyRecallView: View {
                             .foregroundStyle(Color.ink)
                         Text(current.displayHost)
                             .font(AppFont.caption())
-                            .foregroundStyle(Color.textFaint)
+                            .foregroundStyle(Color.textMuted)
                             .padding(.top, 4)
                     }
 
@@ -67,7 +67,7 @@ struct DailyRecallView: View {
                     Spacer()
                 }
             }
-            .padding(16)
+            .padding(AppSpacing.l)
             .background(Color.bgPage)
             .navigationTitle("Daily Recall")
             .navigationBarTitleDisplayMode(.inline)

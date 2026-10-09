@@ -98,21 +98,7 @@ struct EditLinkView: View {
                 addTag(tag)
             }
         } label: {
-            HStack(spacing: 4) {
-                Text(tag)
-                    .font(.system(size: 13, weight: .semibold))
-                if removable {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 10, weight: .bold))
-                }
-            }
-            .foregroundStyle(removable ? Color.chipText : Color.textSecondary)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
-            .background(Capsule().fill(removable ? Color.chipBg : Color.bgPage))
-            .overlay(
-                Capsule().stroke(removable ? Color.clear : Color.borderCard, lineWidth: 1)
-            )
+            Chip(text: tag.asTag, style: removable ? .neutral : .outlined, showsRemove: removable)
         }
         .buttonStyle(.plain)
     }

@@ -7,25 +7,15 @@ struct LinksListView: View {
     @Query private var links: [SavedLink]
     @Environment(\.modelContext) private var modelContext
     @State private var showingAddLink = false
+    @State private var showingSettings = false
     @State private var selectedCategory: Category?
     @State private var selectedTag: String?
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     init(isDone: Bool, title: String) {
         self.title = title
         self.isDone = isDone
         _links = Query(filter: #Predicate<SavedLink> { $0.isDone == isDone }, sort: \SavedLink.addedAt, order: .reverse)
-    }
-
-    private enum Row: Identifiable {
-        case header(Category)
-        case link(SavedLink)
-
-        var id: String {
-            switch self {
-            case .header(let category): return "header-\(category.rawValue)"
-            case .link(let link): return "link-\(link.id)"
-            }
-        }
     }
 
     private var allTags: [String] {
@@ -43,202 +33,205 @@ struct LinksListView: View {
         return result
     }
 
-    private var rows: [Row] {
-        guard selectedCategory == nil else {
-            return filteredLinks.map { .link($0) }
-        }
-        let grouped = Dictionary(grouping: filteredLinks, by: { $0.category })
-        var result: [Row] = []
-        for category in Category.allCases {
-            guard let items = grouped[category], !items.isEmpty else { continue }
-            result.append(.header(category))
-            result.append(contentsOf: items.map { .link($0) })
-        }
-        return result
+    private var isFiltering: Bool { selectedCategory != nil || selectedTag != nil }
+
+    private var countText: String {
+        isFiltering ? "\(filteredLinks.count) of \(links.count)" : "\(links.count) saved"
     }
 
     private var emptyMessage: String {
         if let selectedTag {
             if let selectedCategory {
-                return "Nothing tagged #\(selectedTag) in \(selectedCategory.displayName) yet."
+                return "Nothing tagged \(selectedTag.asTag) in \(selectedCategory.displayName) yet."
             }
-            return "Nothing tagged #\(selectedTag) yet."
+            return "Nothing tagged \(selectedTag.asTag) yet."
         }
         if let selectedCategory {
             return "Nothing in \(selectedCategory.displayName) yet."
         }
         return isDone
-            ? "Your Vault is empty. Check off a link from The Stash to keep it here."
-            : "Nothing saved yet. Tap + to stash a podcast, video, restaurant, or anything else worth coming back to."
+            ? "Your Vault is empty. Mark a link as done to keep it here."
+            : "Nothing saved yet. Add a podcast, video, restaurant, or anything else worth coming back to."
     }
 
     private var emptyIcon: String {
         if let selectedCategory { return selectedCategory.symbolName }
-        return isDone ? "archivebox" : "bookmark.fill"
+        return isDone ? "archivebox" : "bookmark"
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            PageHeader(title: title)
-                .overlay(alignment: .trailing) {
-                    Text("\(filteredLinks.count) saved")
-                        .font(AppFont.caption())
-                        .foregroundStyle(Color.textFaint)
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 8)
-                .padding(.bottom, 4)
+        ZStack(alignment: .bottomTrailing) {
+            List {
+                header
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets(top: AppSpacing.xs, leading: AppSpacing.l, bottom: AppSpacing.s, trailing: AppSpacing.l))
 
-            categoryFilterRow
-                .padding(.top, 4)
-                .padding(.bottom, allTags.isEmpty ? 8 : 4)
-
-            if !allTags.isEmpty {
-                tagFilterRow
-                    .padding(.bottom, 8)
-            }
-
-            if filteredLinks.isEmpty {
-                EmptyStateView(symbolName: emptyIcon, message: emptyMessage)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            } else {
-                List {
-                    ForEach(rows) { row in
-                        switch row {
-                        case .header(let category):
-                            SectionLabel(text: category.displayName)
-                                .listRowBackground(Color.bgPage)
-                                .listRowSeparator(.hidden)
-                                .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
-                        case .link(let link):
-                            NavigationLink {
-                                LinkDetailView(link: link)
-                            } label: {
-                                LinkRow(link: link)
-                            }
-                            .listRowBackground(Color.bgCard)
-                            .swipeActions(edge: .leading) {
-                                Button {
-                                    link.isDone.toggle()
-                                } label: {
-                                    Label(
-                                        link.isDone ? "Reopen" : "Done",
-                                        systemImage: link.isDone ? "arrow.uturn.left" : "checkmark"
-                                    )
-                                }
-                                .tint(Color.accentSuccess)
-                            }
-                            .swipeActions(edge: .trailing) {
-                                Button(role: .destructive) {
-                                    modelContext.delete(link)
-                                } label: {
-                                    Label("Delete", systemImage: "trash")
-                                }
-                            }
-                        }
+                if filteredLinks.isEmpty {
+                    EmptyStateView(symbolName: emptyIcon, message: emptyMessage, actionTitle: showsAddInEmptyState ? "Add a link" : nil) {
+                        showingAddLink = true
+                    }
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                } else {
+                    ForEach(filteredLinks) { link in
+                        row(for: link)
                     }
                 }
-                .listStyle(.plain)
-                .scrollContentBackground(.hidden)
+            }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            .contentMargins(.bottom, isDone ? AppSpacing.l : 88, for: .scrollContent)
+
+            if !isDone {
+                FloatingAddButton { showingAddLink = true }
+                    .padding(.trailing, AppSpacing.l + AppSpacing.xs)
+                    .padding(.bottom, AppSpacing.l)
             }
         }
         .background(Color.bgPage)
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle(title)
+        .navigationBarTitleDisplayMode(.large)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItem(placement: .topBarLeading) {
                 Button {
-                    showingAddLink = true
+                    showingSettings = true
                 } label: {
-                    Image(systemName: "plus")
+                    Image(systemName: "gearshape")
+                        .foregroundStyle(Color.ink)
                 }
+                .accessibilityLabel("Daily recall settings")
+            }
+            if !allTags.isEmpty {
+                ToolbarItem(placement: .topBarTrailing) { tagMenu }
             }
         }
         .sheet(isPresented: $showingAddLink) {
             AddLinkView()
         }
+        .sheet(isPresented: $showingSettings) {
+            NavigationStack { SettingsView() }
+                .presentationDetents([.medium, .large])
+        }
     }
 
-    private var categoryFilterRow: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                filterChip(title: "All", isSelected: selectedCategory == nil) {
-                    selectedCategory = nil
+    private var showsAddInEmptyState: Bool { !isDone && !isFiltering }
+
+    private var header: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.m) {
+            TypePicker(selection: $selectedCategory)
+
+            HStack(spacing: AppSpacing.s) {
+                Text(countText)
+                    .font(AppFont.caption())
+                    .foregroundStyle(Color.textMuted)
+                Spacer()
+                if let selectedTag {
+                    Button {
+                        withAnimation(.snappy) { self.selectedTag = nil }
+                    } label: {
+                        Chip(text: selectedTag.asTag, style: .selected, showsRemove: true)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Clear tag filter \(selectedTag)")
                 }
-                ForEach(Category.allCases) { category in
-                    filterChip(title: category.displayName, isSelected: selectedCategory == category) {
-                        selectedCategory = category
+            }
+        }
+    }
+
+    private var tagMenu: some View {
+        Menu {
+            if selectedTag != nil {
+                Button("Show all tags") { selectedTag = nil }
+                Divider()
+            }
+            ForEach(allTags, id: \.self) { tag in
+                Button {
+                    selectedTag = tag
+                } label: {
+                    if selectedTag == tag {
+                        Label(tag.asTag, systemImage: "checkmark")
+                    } else {
+                        Text(tag.asTag)
                     }
                 }
             }
-            .padding(.horizontal, 16)
-        }
-    }
-
-    private var tagFilterRow: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 6) {
-                ForEach(allTags, id: \.self) { tag in
-                    tagChip(tag)
-                }
-            }
-            .padding(.horizontal, 16)
-        }
-    }
-
-    private func filterChip(title: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(title)
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(isSelected ? Color.bgCard : Color.chipText)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(Capsule().fill(isSelected ? Color.accent : Color.chipBg))
-        }
-        .buttonStyle(.plain)
-    }
-
-    /// Deliberately lighter-weight than `filterChip` — outlined rather than filled, smaller
-    /// text — so the tag row reads as a secondary refinement under the primary category filter
-    /// rather than a second row of equally-weighted pills. Tapping the active tag clears it,
-    /// so there's no separate "All tags" chip to make room for.
-    private func tagChip(_ tag: String) -> some View {
-        let isSelected = selectedTag == tag
-        return Button {
-            selectedTag = isSelected ? nil : tag
         } label: {
-            Text("#\(tag)")
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(isSelected ? Color.accent : Color.textMuted)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 5)
-                .background(Capsule().fill(isSelected ? Color.accent.opacity(0.12) : Color.clear))
-                .overlay(Capsule().stroke(isSelected ? Color.accent.opacity(0.4) : Color.borderCard, lineWidth: 1))
+            Image(systemName: selectedTag == nil ? "tag" : "tag.fill")
+                .foregroundStyle(selectedTag == nil ? Color.ink : Color.accent)
         }
-        .buttonStyle(.plain)
+        .accessibilityLabel("Filter by tag")
+    }
+
+    private func row(for link: SavedLink) -> some View {
+        ZStack {
+            LinkRow(link: link, showsCategory: selectedCategory == nil)
+            // A hidden link overlay keeps the row tappable without the system disclosure chevron.
+            NavigationLink {
+                LinkDetailView(link: link)
+            } label: { EmptyView() }
+            .opacity(0)
+        }
+        .listRowBackground(Color.clear)
+        .listRowSeparatorTint(Color.borderCard)
+        .listRowInsets(EdgeInsets(top: AppSpacing.m, leading: AppSpacing.l, bottom: AppSpacing.m, trailing: AppSpacing.l))
+        .alignmentGuide(.listRowSeparatorLeading) { _ in
+            dynamicTypeSize.isAccessibilitySize ? AppSpacing.l : AppSpacing.l + LinkRow.thumbSize + AppSpacing.m
+        }
+        .swipeActions(edge: .leading) {
+            Button {
+                link.isDone.toggle()
+            } label: {
+                Label(link.isDone ? "Reopen" : "Done", systemImage: link.isDone ? "arrow.uturn.left" : "checkmark")
+            }
+            .tint(Color.accentSuccess)
+        }
+        .swipeActions(edge: .trailing) {
+            Button(role: .destructive) {
+                modelContext.delete(link)
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
+        }
+        .contextMenu {
+            Button {
+                link.isDone.toggle()
+            } label: {
+                Label(link.isDone ? "Reopen" : "Mark done", systemImage: link.isDone ? "arrow.uturn.left" : "checkmark")
+            }
+            Button(role: .destructive) {
+                modelContext.delete(link)
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
+        }
     }
 }
 
 private struct EmptyStateView: View {
     let symbolName: String
     let message: String
+    var actionTitle: String?
+    var action: () -> Void = {}
 
     var body: some View {
-        VStack(spacing: 14) {
-            ZStack {
-                Circle()
-                    .fill(Color.chipBg)
-                    .frame(width: 72, height: 72)
-                Image(systemName: symbolName)
-                    .font(.system(size: 26, weight: .medium))
-                    .foregroundStyle(Color.accent)
-            }
+        VStack(spacing: AppSpacing.m) {
+            Image(systemName: symbolName)
+                .font(.largeTitle.weight(.light))
+                .foregroundStyle(Color.textMuted)
             Text(message)
                 .font(AppFont.secondaryDetail())
                 .foregroundStyle(Color.textSecondary)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
+                .padding(.horizontal, AppSpacing.xl)
+            if let actionTitle {
+                Button(actionTitle, action: action)
+                    .buttonStyle(.primary)
+                    .padding(.horizontal, AppSpacing.xxl + AppSpacing.l)
+                    .padding(.top, AppSpacing.xs)
+            }
         }
-        .padding(.top, 48)
+        .frame(maxWidth: .infinity)
+        .padding(.top, AppSpacing.xxl + AppSpacing.l)
     }
 }

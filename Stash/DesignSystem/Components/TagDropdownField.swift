@@ -14,7 +14,7 @@ struct TagDropdownField: View {
     @State private var showingPicker = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: AppSpacing.s) {
             if availableTags.isEmpty {
                 Text("No tags yet — tag a link from its Edit screen and it'll show up here next time.")
                     .font(AppFont.caption())
@@ -28,7 +28,7 @@ struct TagDropdownField: View {
                         HStack(spacing: 4) {
                             Text(selectedTags.isEmpty ? "Add tags" : "\(selectedTags.count) tag\(selectedTags.count == 1 ? "" : "s") selected")
                             Image(systemName: "chevron.up.chevron.down")
-                                .font(.system(size: 12, weight: .semibold))
+                                .font(.caption.weight(.semibold))
                         }
                         .foregroundStyle(Color.accent)
                     }
@@ -41,14 +41,7 @@ struct TagDropdownField: View {
                             Button {
                                 toggle(tag)
                             } label: {
-                                HStack(spacing: 4) {
-                                    Text("#\(tag)").font(.system(size: 13, weight: .semibold))
-                                    Image(systemName: "xmark").font(.system(size: 10, weight: .bold))
-                                }
-                                .foregroundStyle(Color.chipText)
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 5)
-                                .background(Capsule().fill(Color.chipBg))
+                                Chip(text: tag.asTag, showsRemove: true)
                             }
                             .buttonStyle(.plain)
                         }

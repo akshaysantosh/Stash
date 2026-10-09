@@ -1,48 +1,67 @@
 import SwiftUI
 import UIKit
 
+/// A flat, calm row: thumbnail, title, one meta line, and (optionally) a muted tag line.
+/// Category shows only as a small symbol on the meta line — and only when the list isn't
+/// already filtered to one category.
 struct LinkRow: View {
     let link: SavedLink
+    var showsCategory = true
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    static let thumbSize: CGFloat = 76
 
     private var meta: String {
         guard let publishedAt = link.publishedAt else { return link.displayHost }
-        return "\(publishedAt.formatted(.dateTime.month(.abbreviated).day())) · \(link.displayHost)"
+        return "\(link.displayHost) · \(publishedAt.formatted(.dateTime.month(.abbreviated).day()))"
+    }
+
+    private var tagLine: String? {
+        guard !link.tags.isEmpty else { return nil }
+        let shown = link.tags.prefix(2).map(\.asTag).joined(separator: "  ")
+        let extra = link.tags.count - 2
+        return extra > 0 ? "\(shown)  +\(extra)" : shown
     }
 
     var body: some View {
-        HStack(spacing: 10) {
-            RoundedRectangle(cornerRadius: 2)
-                .fill(link.category.accentColor)
-                .frame(width: 3)
-                .padding(.vertical, 8)
-
-            thumbnail
-
-            VStack(alignment: .leading, spacing: 3) {
-                Text(link.title.isEmpty ? link.displayHost : link.title)
-                    .font(AppFont.body())
-                    .fontWeight(.semibold)
-                    .foregroundStyle(Color.ink)
-                    .lineLimit(2)
-                Text(meta)
-                    .font(AppFont.caption())
-                    .foregroundStyle(Color.textSecondary)
-                if !link.snippet.isEmpty {
-                    Text(link.snippet)
-                        .font(AppFont.caption())
-                        .foregroundStyle(Color.textMuted)
-                        .lineLimit(2)
-                }
-                if !link.tags.isEmpty {
-                    Text(link.tags.map { "#\($0)" }.joined(separator: "  "))
-                        .font(AppFont.caption())
-                        .foregroundStyle(Color.accent)
-                        .lineLimit(1)
-                }
+        if dynamicTypeSize.isAccessibilitySize {
+            // Large text: stack the thumbnail above the text so the title gets the full width.
+            VStack(alignment: .leading, spacing: AppSpacing.m) {
+                thumbnail
+                textBlock
             }
-            Spacer(minLength: 0)
+        } else {
+            HStack(alignment: .top, spacing: AppSpacing.m) {
+                thumbnail
+                textBlock
+                Spacer(minLength: 0)
+            }
         }
-        .padding(.vertical, 6)
+    }
+
+    private var textBlock: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.xs) {
+            Text(link.title.isEmpty ? link.displayHost : link.title)
+                .font(AppFont.rowTitle())
+                .foregroundStyle(Color.ink)
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 4 : 2)
+            HStack(spacing: AppSpacing.xs) {
+                if showsCategory {
+                    Image(systemName: link.category.symbolName)
+                        .font(.caption2)
+                }
+                Text(meta)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
+            }
+            .font(AppFont.caption())
+            .foregroundStyle(Color.textSecondary)
+            if let tagLine {
+                Text(tagLine)
+                    .font(AppFont.caption())
+                    .foregroundStyle(Color.textMuted)
+                    .lineLimit(1)
+            }
+        }
     }
 
     @ViewBuilder
@@ -51,16 +70,16 @@ struct LinkRow: View {
             Image(uiImage: uiImage)
                 .resizable()
                 .scaledToFill()
-                .frame(width: 68, height: 68)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .frame(width: Self.thumbSize, height: Self.thumbSize)
+                .clipShape(RoundedRectangle(cornerRadius: AppRadius.thumb))
         } else {
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: AppRadius.thumb)
                 .fill(Color.chipBg)
-                .frame(width: 68, height: 68)
+                .frame(width: Self.thumbSize, height: Self.thumbSize)
                 .overlay(
                     Image(systemName: link.category.symbolName)
-                        .font(.system(size: 20))
-                        .foregroundStyle(link.category.accentColor)
+                        .font(.title3)
+                        .foregroundStyle(Color.textMuted)
                 )
         }
     }
