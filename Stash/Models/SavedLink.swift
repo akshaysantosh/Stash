@@ -14,6 +14,8 @@ final class SavedLink {
     var snippet: String = ""
     var publishedAt: Date? = nil
     var tags: [String] = []
+    /// When set, the link is pinned to "Up next" (see `UpNext`). Nil for everything else.
+    var upNextAt: Date? = nil
 
     init(
         url: String,
@@ -36,6 +38,14 @@ final class SavedLink {
         self.snippet = snippet
         self.publishedAt = publishedAt
         self.tags = tags
+    }
+
+    var isUpNext: Bool { upNextAt != nil }
+
+    /// Marking a link done also takes it off Up next — Up next is for things still to do.
+    func toggleDone() {
+        isDone.toggle()
+        if isDone { upNextAt = nil }
     }
 
     var category: Category {

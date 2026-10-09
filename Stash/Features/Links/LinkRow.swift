@@ -7,6 +7,8 @@ import UIKit
 struct LinkRow: View {
     let link: SavedLink
     var showsCategory = true
+    /// Marks a pinned link when it's shown in the regular list (not inside the Up next section).
+    var showsPin = false
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     static let thumbSize: CGFloat = 76
@@ -46,6 +48,11 @@ struct LinkRow: View {
                 .foregroundStyle(Color.ink)
                 .lineLimit(dynamicTypeSize.isAccessibilitySize ? 4 : 2)
             HStack(spacing: AppSpacing.xs) {
+                if showsPin {
+                    Image(systemName: "pin.fill")
+                        .font(.caption2)
+                        .foregroundStyle(Color.accent)
+                }
                 if showsCategory {
                     Image(systemName: link.category.symbolName)
                         .font(.caption2)

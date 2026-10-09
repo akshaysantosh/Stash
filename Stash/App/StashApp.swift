@@ -5,8 +5,6 @@ import UserNotifications
 
 @main
 struct StashApp: App {
-    @StateObject private var notificationRouter = NotificationRouter()
-
     let modelContainer: ModelContainer = {
         #if DEBUG
         if CommandLine.arguments.contains("-seedSampleData") {
@@ -34,13 +32,16 @@ struct StashApp: App {
     init() {
         // Navigation and tab bars use the system appearance (large titles, liquid glass on newer
         // iOS); the cream background comes from each screen's own `.background(Color.bgPage)`.
-        UNUserNotificationCenter.current().delegate = notificationRouter
+        // Daily recall was removed. Clean up anything it left behind on devices that had it on.
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["com.akshay.stash.dailyRecall"])
+        for key in ["dailyRecallEnabled", "dailyRecallTag", "dailyRecallHour", "dailyRecallMinute"] {
+            UserDefaults.standard.removeObject(forKey: key)
+        }
     }
 
     var body: some Scene {
         WindowGroup {
             RootTabView()
-                .environmentObject(notificationRouter)
                 .preferredColorScheme(.light)
                 .tint(Color.accent)
         }

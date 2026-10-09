@@ -9,6 +9,7 @@ struct LinkDetailView: View {
     @Environment(\.openURL) private var openURL
     @State private var showingDeleteConfirm = false
     @State private var showingEdit = false
+    @Query(filter: #Predicate<SavedLink> { $0.upNextAt != nil && $0.isDone == false }) private var pinned: [SavedLink]
 
     private var meta: String {
         var parts = [link.category.displayName, link.displayHost]
@@ -82,8 +83,16 @@ struct LinkDetailView: View {
                     } label: {
                         Label("Edit", systemImage: "pencil")
                     }
+                    if !link.isDone {
+                        Button {
+                            UpNext.toggle(link, pinned: pinned)
+                        } label: {
+                            Label(link.isUpNext ? "Remove from Up next" : "Add to Up next",
+                                  systemImage: link.isUpNext ? "pin.slash" : "pin")
+                        }
+                    }
                     Button {
-                        link.isDone.toggle()
+                        link.toggleDone()
                     } label: {
                         Label(link.isDone ? "Move back to Stash" : "Mark done",
                               systemImage: link.isDone ? "arrow.uturn.left" : "checkmark.circle")

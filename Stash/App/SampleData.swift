@@ -55,9 +55,21 @@ enum SampleData {
                       imageData: art(.systemPurple, "play.fill"), category: .watch, publishedAt: day(40), tags: ["product"]),
             SavedLink(url: "https://example.substack.com/p/done-reading", title: "Writing clearly under time pressure",
                       imageData: art(.systemPink, "doc.text.fill"), category: .read, publishedAt: day(50), tags: ["storytelling"]),
+            SavedLink(url: "https://open.spotify.com/episode/sample11", title: "What makes a great product conversation",
+                      imageData: art(.systemMint, "headphones"), category: .listen, publishedAt: day(58), tags: ["product", "leadership"]),
+            SavedLink(url: "https://www.youtube.com/watch?v=sample12", title: "A beginner's guide to prompting",
+                      imageData: art(.systemCyan, "play.fill"), category: .watch, publishedAt: day(66), tags: ["ai"]),
         ]
         vaulted.forEach { $0.isDone = true }
-        return items + vaulted
+        // Newest first in the order written above, so screenshots show a predictable mix.
+        let all = items + vaulted
+        for (index, link) in all.enumerated() {
+            link.addedAt = Date().addingTimeInterval(-Double(index) * 3600)
+        }
+        // Two links pinned to Up next so the section shows in screenshots.
+        items[2].upNextAt = Date().addingTimeInterval(-120)
+        items[5].upNextAt = Date().addingTimeInterval(-60)
+        return all
     }
 
     private static func art(_ color: UIColor, _ symbol: String) -> Data? {
