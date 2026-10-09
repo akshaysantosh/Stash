@@ -106,7 +106,7 @@ struct ShareView: View {
                 }
                 .padding(16)
             }
-            .background(Color.bgPage)
+            .background(PaperBackground())
         }
     }
 
@@ -122,7 +122,7 @@ struct ShareView: View {
         }
         .padding(24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.bgPage)
+        .background(PaperBackground())
     }
 
     private func extractURL() async -> URL? {

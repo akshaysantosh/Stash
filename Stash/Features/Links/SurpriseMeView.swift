@@ -28,7 +28,7 @@ struct SurpriseMeView: View {
                 }
             }
             .padding(AppSpacing.l)
-            .background(Color.bgPage)
+            .background(PaperBackground())
             .navigationTitle(tag.asTag)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

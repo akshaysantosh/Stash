@@ -31,7 +31,7 @@ struct StashApp: App {
 
     init() {
         // Navigation and tab bars use the system appearance (large titles, liquid glass on newer
-        // iOS); the cream background comes from each screen's own `.background(Color.bgPage)`.
+        // iOS); the paper background comes from each screen's own `.background(PaperBackground())`.
         // Daily recall was removed. Clean up anything it left behind on devices that had it on.
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["com.akshay.stash.dailyRecall"])
         for key in ["dailyRecallEnabled", "dailyRecallTag", "dailyRecallHour", "dailyRecallMinute"] {

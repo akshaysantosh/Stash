@@ -140,7 +140,7 @@ struct LinksListView: View {
                     .padding(.bottom, AppSpacing.l)
             }
         }
-        .background(Color.bgPage)
+        .background(PaperBackground())
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.large)
         .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "Search saved links")

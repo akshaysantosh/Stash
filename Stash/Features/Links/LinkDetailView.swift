@@ -72,7 +72,7 @@ struct LinkDetailView: View {
             }
             .padding(AppSpacing.l)
         }
-        .background(Color.bgPage)
+        .background(PaperBackground())
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
