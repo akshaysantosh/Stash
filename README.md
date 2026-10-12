@@ -1,25 +1,27 @@
 # Stash
 
-Save any link — a podcast, a YouTube video, a Spotify audiobook, a restaurant, a LinkedIn or X post — with its title, image, and a preview of the content pulled in automatically, so you don't forget about it. Tag it, edit it, mark it done once you've actually checked it out, and let Stash nudge you to revisit it later. Add links from inside the app, or straight from the Share Sheet in Safari/YouTube/Instagram/etc.
+Save any link — a podcast, a YouTube video, a Spotify audiobook, a restaurant, a LinkedIn or X post — with its title, image, and a preview of the content pulled in automatically, so you don't forget about it. Tag it, pin the few things you want to get to next, search it, mark it done once you've actually checked it out, and let Stash pick something for you when you can't decide. Add links from inside the app, or straight from the Share Sheet in Safari/YouTube/Instagram/etc.
 
 <p>
-  <img src="screenshots/the-stash-mix.jpg" width="260" alt="The Stash list showing a Watch, Listen, and Read item together, each with its own tag — AI, product, and storytelling">
-  <img src="screenshots/link-detail.png" width="260" alt="Link detail view showing tags and a Vaulted badge">
-  <img src="screenshots/vault.png" width="260" alt="The Vault, filtered by tag">
+  <img src="screenshots/the-stash-mix.jpg" width="260" alt="The Stash on a warm paper background: a one-row type filter, an Up next section with two pinned links, and the rest of the list below">
+  <img src="screenshots/surprise-me.jpg" width="260" alt="Surprise me: with the #product tag filter on, a card showing a random unfinished link with that tag, with Show another, Open and Add to Up next">
+  <img src="screenshots/link-detail.jpg" width="260" alt="Link detail with its tags, a single Open link button, an About section and a personal note">
 </p>
 <p>
-  <img src="screenshots/edit-link.png" width="260" alt="Edit Link sheet with tag chips and suggestions">
-  <img src="screenshots/settings.png" width="260" alt="Settings screen configuring daily recall">
+  <img src="screenshots/vault.jpg" width="260" alt="The Vault, holding links marked done">
+  <img src="screenshots/edit-link.jpg" width="260" alt="Edit Link sheet with tag chips and suggestions">
 </p>
 
-*(Screenshots use public sample links — Lenny's Podcast, Planet Money, Andrew Ng's "AI for Everyone," and a Substack essay on narrative structure — not real personal data.)*
+*(Screenshots use generated sample links, not real personal data.)*
 
 ## How it works
 
-- **The Stash / Vault** tabs — your saved links, split by whether you've gotten to them yet. Marking a link done moves it to the Vault — a keep pile, not a delete pile. Filter by category (Watch / Listen / Read / Socials / Visit / Buy / Other) with the chip row up top; the header shows a live count of what's visible.
-- **Add a link** (+ button, or the Share Sheet from any app) — Stash fetches a title and thumbnail automatically. YouTube and X/Twitter go through their own public oEmbed APIs for accurate titles and (for X) the actual post text; everything else uses Apple's LinkPresentation framework, the same engine behind Messages/Safari link previews. LinkedIn/Instagram/Facebook posts get their poster's name as the title and, best-effort, a caption preview. Category is guessed from the URL/domain and always editable. A publish date is picked up where the source exposes one (reliable for X; best-effort elsewhere via common meta tags).
+- **The Stash / Vault** tabs — your saved links, split by whether you've gotten to them yet. Marking a link done moves it to the Vault — a keep pile, not a delete pile. Filter by type with the one-row picker up top (All / Watch / Listen / Read, with Socials / Visit / Buy / Other under *More*); a quiet count shows what's visible, and a small menu next to it switches between newest-first and oldest-first.
+- **Search** — pull down for the search field; it looks across titles, sites, tags, notes and the fetched preview text, and works together with the type and tag filters.
+- **Up next** — pin up to three links (swipe right on a row, long-press it, or use the **⋯** menu on a link) and they sit in their own section at the top of The Stash. Pin a fourth and the oldest pin quietly drops out; marking a link done un-pins it.
+- **Surprise me, per tag** — filter by a tag and a small dice appears next to the active tag. Tap it for a random unfinished link with that tag, with *Show another*, *Open* and *Add to Up next*. It's hidden until you're already looking at a tag, so there's no extra clutter.
+- **Add a link** (the + button, or the Share Sheet from any app) — Stash fetches a title and thumbnail automatically. YouTube and X/Twitter go through their own public oEmbed APIs for accurate titles and (for X) the actual post text; everything else uses Apple's LinkPresentation framework, the same engine behind Messages/Safari link previews. LinkedIn/Instagram/Facebook posts get their poster's name as the title and, best-effort, a caption preview. Category is guessed from the URL/domain and always editable. A publish date is picked up where the source exposes one (reliable for X; best-effort elsewhere via common meta tags).
 - **Share Sheet**: tap *Share* from inside YouTube/Instagram/Safari/etc. and send straight to Stash — no need to copy/paste a URL. Handles both proper link shares and apps (like YouTube) that share plain text with a URL embedded in it.
-- **Tap a link** to see the full preview — the image itself is the tap target to open the link (Safari/the relevant app) — plus any fetched post-preview text, your own note, tags, and category/done controls.
-- **Edit anything** — tap the pencil icon on a link's detail view to fix up the title, category, note, or tags after the fact. Changes only apply on Save, so Cancel always discards them, no matter what you typed.
-- **Tags** are free-form and cut across categories and source apps — tag a podcast episode and a saved article both "product" if that's how you think about them. Add tags from the Edit sheet (previously-used tags show up as one-tap suggestions); the list view gets a second filter row for them, alongside the existing category filter, so you can slice by category and tag together.
-- **Daily recall**: from the Settings tab, turn on a once-a-day local notification tied to one tag and one time of day. The notification itself is a generic teaser ("Time to revisit your product stash") — no content is baked into it — and tapping it picks a genuinely random saved link under that tag at open time, so it's always fresh even if what's tagged has changed since the notification was scheduled.
+- **Tap a link** to see the full preview with a single **Open link** button (the image opens it too), the fetched preview text, your own note and tags. Edit, Add to Up next, Mark done and Delete live in the **⋯** menu.
+- **Edit anything** — choose **Edit** from a link's **⋯** menu to fix up the title, category, note, or tags after the fact. Changes only apply on Save, so Cancel always discards them, no matter what you typed.
+- **Tags** are free-form and cut across categories and source apps — tag a podcast episode and a saved article both "product" if that's how you think about them. Add tags from the Edit sheet (previously-used tags show up as one-tap suggestions); the tag button in the list's toolbar filters by tag, and works together with the type picker.
