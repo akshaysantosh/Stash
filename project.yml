@@ -24,6 +24,8 @@ targets:
           - UIInterfaceOrientationPortrait
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
+        # No custom/non-exempt encryption (HTTPS only) — skips the export-compliance prompt on every upload.
+        ITSAppUsesNonExemptEncryption: false
     # App Group entitlement, added to try the Share Extension (see ShareExtension target below).
     # TRYING THIS ON A FREE APPLE ID: PriceTrack's iCloud attempt showed free "Personal Team"
     # accounts can't provision some capabilities at all — App Groups might hit the same wall.
@@ -43,6 +45,10 @@ targets:
         SWIFT_VERSION: "5.0"
         IPHONEOS_DEPLOYMENT_TARGET: "17.0"
         CODE_SIGN_STYLE: Automatic
+        # Keep the app and its Share Extension on the same version/build (App Store requires it).
+        # DEVELOPMENT_TEAM is deliberately not committed — Scripts/archive.sh passes TEAM_ID in at build time.
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
         ENABLE_PREVIEWS: true
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
     dependencies:
@@ -89,3 +95,7 @@ targets:
         SWIFT_VERSION: "5.0"
         IPHONEOS_DEPLOYMENT_TARGET: "17.0"
         CODE_SIGN_STYLE: Automatic
+        # Keep the app and its Share Extension on the same version/build (App Store requires it).
+        # DEVELOPMENT_TEAM is deliberately not committed — Scripts/archive.sh passes TEAM_ID in at build time.
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
