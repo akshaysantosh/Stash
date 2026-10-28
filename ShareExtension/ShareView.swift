@@ -19,6 +19,7 @@ struct ShareView: View {
     @State private var availableTags: [String] = []
     @State private var selectedTags: [String] = []
     @State private var saveError: String?
+    @State private var addToUpNext = false
 
     var body: some View {
         NavigationStack {
@@ -100,6 +101,18 @@ struct ShareView: View {
                             .padding(.top, 4)
                     }
 
+                    CardView {
+                        Toggle(isOn: $addToUpNext) {
+                            Label("Add to Up next", systemImage: "pin")
+                                .font(AppFont.body())
+                                .foregroundStyle(Color.bodyText)
+                        }
+                        .tint(Color.accent)
+                        Text("Pin it to the top of The Stash (up to \(UpNext.limit)).")
+                            .font(AppFont.caption())
+                            .foregroundStyle(Color.textMuted)
+                    }
+
                     if let saveError {
                         CalloutBanner(text: saveError, style: .warn)
                     }
@@ -125,45 +138,72 @@ struct ShareView: View {
         .background(PaperBackground())
     }
 
+    /// Finds the link in whatever the host app shared. Apps differ a lot: Safari hands over a typed
+    /// URL, YouTube/Instagram/Spotify often share plain text with a link in it, Messages and Notes
+    /// share text, and some put the link only in the item's attributed text or title. Try each in
+    /// turn and return the first real web link.
     private func extractURL() async -> URL? {
         guard let items = extensionContext?.inputItems as? [NSExtensionItem] else { return nil }
 
+        // 1. Properly typed URL attachments.
         for item in items {
-            guard let attachments = item.attachments else { continue }
-
-            // Safari and most apps hand over a properly-typed URL attachment.
-            for attachment in attachments where attachment.hasItemConformingToTypeIdentifier(UTType.url.identifier) {
-                if let url = await loadURL(from: attachment) { return url }
+            for attachment in item.attachments ?? [] where attachment.hasItemConformingToTypeIdentifier(UTType.url.identifier) {
+                if let url = await webURL(from: await loadValue(from: attachment, type: UTType.url)) { return url }
             }
-
-            // Some apps (YouTube among them) share plain text with a link embedded in it instead.
-            for attachment in attachments where attachment.hasItemConformingToTypeIdentifier(UTType.plainText.identifier) {
-                if let text = await loadText(from: attachment), let url = firstURL(in: text) { return url }
+        }
+        // 2. Text attachments (plain text, UTF-8/16 text, rich text...) with a link inside.
+        for item in items {
+            for attachment in item.attachments ?? [] where attachment.hasItemConformingToTypeIdentifier(UTType.text.identifier) {
+                if let url = await webURL(from: await loadValue(from: attachment, type: UTType.text)) { return url }
+            }
+        }
+        // 3. The item's own text/title, for apps that attach nothing usable.
+        for item in items {
+            for text in [item.attributedContentText?.string, item.attributedTitle?.string] {
+                if let text, let url = firstWebURL(in: text) { return url }
             }
         }
         return nil
     }
 
-    private func loadURL(from attachment: NSItemProvider) async -> URL? {
+    private func loadValue(from attachment: NSItemProvider, type: UTType) async -> Any? {
         await withCheckedContinuation { continuation in
-            attachment.loadItem(forTypeIdentifier: UTType.url.identifier, options: nil) { data, _ in
-                continuation.resume(returning: data as? URL)
+            attachment.loadItem(forTypeIdentifier: type.identifier, options: nil) { data, _ in
+                continuation.resume(returning: data)
             }
         }
     }
 
-    private func loadText(from attachment: NSItemProvider) async -> String? {
-        await withCheckedContinuation { continuation in
-            attachment.loadItem(forTypeIdentifier: UTType.plainText.identifier, options: nil) { data, _ in
-                continuation.resume(returning: data as? String)
+    /// Turns whatever `loadItem` returned (a URL, NSURL, String, Data, attributed text) into a web link.
+    private func webURL(from value: Any?) async -> URL? {
+        switch value {
+        case let url as URL:
+            return isWeb(url) ? url : nil
+        case let string as String:
+            return firstWebURL(in: string)
+        case let attributed as NSAttributedString:
+            return firstWebURL(in: attributed.string)
+        case let data as Data:
+            if let string = String(data: data, encoding: .utf8) ?? String(data: data, encoding: .utf16) {
+                return firstWebURL(in: string)
             }
+            return nil
+        default:
+            return nil
         }
     }
 
-    private func firstURL(in text: String) -> URL? {
+    private func isWeb(_ url: URL) -> Bool {
+        let scheme = url.scheme?.lowercased()
+        return (scheme == "http" || scheme == "https") && url.host != nil
+    }
+
+    private func firstWebURL(in text: String) -> URL? {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let direct = URL(string: trimmed), isWeb(direct) { return direct }
         guard let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue) else { return nil }
         let range = NSRange(text.startIndex..., in: text)
-        return detector.firstMatch(in: text, range: range)?.url
+        return detector.matches(in: text, range: range).compactMap(\.url).first(where: isWeb)
     }
 
     private func fetchMetadata(for url: URL) async {
@@ -216,6 +256,10 @@ struct ShareView: View {
                 tags: selectedTags
             )
             context.insert(link)
+            if addToUpNext {
+                let descriptor = FetchDescriptor<SavedLink>(predicate: #Predicate { $0.upNextAt != nil && $0.isDone == false })
+                UpNext.toggle(link, pinned: (try? context.fetch(descriptor)) ?? [])
+            }
             try context.save()
             onFinish()
         } catch {

@@ -80,8 +80,12 @@ targets:
           NSExtensionPrincipalClass: "$(PRODUCT_MODULE_NAME).ShareViewController"
           NSExtensionAttributes:
             NSExtensionActivationRule:
+              # Safari and most apps share a typed web URL or page...
               NSExtensionActivationSupportsWebURLWithMaxCount: 1
               NSExtensionActivationSupportsWebPageWithMaxCount: 1
+              # ...but YouTube, Instagram, Spotify, WhatsApp, Messages, Notes, etc. share the link as
+              # plain text. Without this key Stash never appears in their Share Sheet.
+              NSExtensionActivationSupportsText: true
     entitlements:
       path: ShareExtension/ShareExtension.entitlements
       properties:

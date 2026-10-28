@@ -6,6 +6,7 @@ struct AddLinkView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Query private var allLinks: [SavedLink]
+    @Query(filter: #Predicate<SavedLink> { $0.upNextAt != nil && $0.isDone == false }) private var pinned: [SavedLink]
 
     @State private var urlText = ""
     @State private var isFetching = false
@@ -18,49 +19,58 @@ struct AddLinkView: View {
     @State private var category: Category = .other
     @State private var note = ""
     @State private var selectedTags: [String] = []
+    @State private var addToUpNext = false
+    @FocusState private var urlFocused: Bool
 
     private var availableTags: [String] {
         Set(allLinks.flatMap(\.tags)).sorted()
     }
 
-    private var canSave: Bool {
-        !urlText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && hasFetched
+    private var trimmedURL: String {
+        urlText.trimmingCharacters(in: .whitespacesAndNewlines)
     }
+
+    /// Only http(s) links with a host count — this gates auto-fetch and saving.
+    private var hasValidURL: Bool {
+        guard let url = URL(string: trimmedURL), let scheme = url.scheme?.lowercased() else { return false }
+        return (scheme == "http" || scheme == "https") && url.host != nil
+    }
+
+    /// Saving doesn't wait for a preview to succeed — a link with no title is still worth keeping
+    /// (it falls back to the address) — it only waits while a fetch is in flight.
+    private var canSave: Bool { hasValidURL && !isFetching }
 
     var body: some View {
         NavigationStack {
             Form {
                 Section("Link") {
-                    HStack {
+                    HStack(spacing: AppSpacing.s) {
                         TextField("Paste a URL", text: $urlText)
                             .keyboardType(.URL)
                             .autocorrectionDisabled()
                             .textInputAutocapitalization(.never)
-                            .onChange(of: urlText) { hasFetched = false }
-                        Button {
-                            if let clipboardString = UIPasteboard.general.string {
-                                urlText = clipboardString
-                            }
-                        } label: {
-                            Image(systemName: "doc.on.clipboard")
-                        }
-                    }
-
-                    Button {
-                        Task { await fetchMetadata() }
-                    } label: {
+                            .focused($urlFocused)
                         if isFetching {
                             ProgressView()
-                        } else {
-                            Text("Fetch Preview")
                         }
+                        // PasteButton pastes without iOS's "Allow Paste" prompt.
+                        PasteButton(payloadType: String.self) { strings in
+                            if let text = strings.first { urlText = text }
+                        }
+                        .labelStyle(.iconOnly)
+                        .buttonBorderShape(.capsule)
+                        .tint(Color.accent)
                     }
-                    .disabled(urlText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isFetching)
 
                     if let fetchError {
-                        Text(fetchError)
-                            .font(AppFont.caption())
-                            .foregroundStyle(Color.calloutWarnText)
+                        HStack(alignment: .firstTextBaseline) {
+                            Text(fetchError)
+                                .font(AppFont.caption())
+                                .foregroundStyle(Color.calloutWarnText)
+                            Spacer()
+                            Button("Try again") { Task { await fetchMetadata() } }
+                                .font(AppFont.caption())
+                        }
                     }
                 }
 
@@ -72,7 +82,7 @@ struct AddLinkView: View {
                                 .scaledToFit()
                                 .frame(maxHeight: 160)
                                 .frame(maxWidth: .infinity)
-                                .clipShape(RoundedRectangle(cornerRadius: AppMetrics.cardRadius))
+                                .clipShape(RoundedRectangle(cornerRadius: AppRadius.card))
                         }
                         TextField("Title", text: $fetchedTitle)
                         if let fetchedSnippet, !fetchedSnippet.isEmpty {
@@ -82,7 +92,9 @@ struct AddLinkView: View {
                                 .lineLimit(4)
                         }
                     }
+                }
 
+                if hasValidURL {
                     Section("Details") {
                         Picker("Category", selection: $category) {
                             ForEach(Category.allCases) { c in
@@ -90,6 +102,19 @@ struct AddLinkView: View {
                             }
                         }
                         TextField("Note (optional)", text: $note, axis: .vertical)
+                    }
+
+                    Section {
+                        Toggle(isOn: $addToUpNext) {
+                            Label("Add to Up next", systemImage: "pin")
+                        }
+                        .tint(Color.accent)
+                    } footer: {
+                        if addToUpNext && pinned.count >= UpNext.limit {
+                            Text("Up next is full — this replaces the oldest pin.")
+                        } else {
+                            Text("Pin it to the top of The Stash (up to \(UpNext.limit)).")
+                        }
                     }
 
                     Section("Tags") {
@@ -108,32 +133,54 @@ struct AddLinkView: View {
                         .disabled(!canSave)
                 }
             }
+            // Fetch the preview automatically as soon as the text becomes a valid link. `.task(id:)`
+            // cancels the previous run whenever the text changes, so typing or pasting settles
+            // before anything is fetched and a stale fetch can never overwrite a newer one.
+            .task(id: urlText) { await autoFetch() }
+            .onAppear { urlFocused = true }
         }
     }
 
+    private func autoFetch() async {
+        hasFetched = false
+        fetchError = nil
+        fetchedTitle = ""
+        fetchedImageData = nil
+        fetchedSnippet = nil
+        fetchedDate = nil
+        isFetching = false
+        guard hasValidURL, let url = URL(string: trimmedURL) else { return }
+
+        category = Category.guess(for: url)
+        isFetching = true
+        try? await Task.sleep(for: .milliseconds(500))
+        guard !Task.isCancelled else { return }
+        await fetchMetadata()
+    }
+
     private func fetchMetadata() async {
+        let requested = trimmedURL
         isFetching = true
         fetchError = nil
         do {
-            let result = try await LinkMetadataService.fetch(for: urlText)
+            let result = try await LinkMetadataService.fetch(for: requested)
+            guard !Task.isCancelled, requested == trimmedURL else { return }
             fetchedTitle = result.title ?? ""
             fetchedImageData = result.imageData
             fetchedSnippet = result.snippet
             fetchedDate = result.publishedDate
-            if let url = URL(string: urlText.trimmingCharacters(in: .whitespacesAndNewlines)) {
-                category = Category.guess(for: url)
-            }
             hasFetched = true
         } catch {
-            fetchError = error.localizedDescription
+            guard !Task.isCancelled, requested == trimmedURL else { return }
+            fetchError = "Couldn't load a preview — you can still save the link."
         }
         isFetching = false
     }
 
     private func save() {
         let link = SavedLink(
-            url: urlText.trimmingCharacters(in: .whitespacesAndNewlines),
-            title: fetchedTitle.isEmpty ? urlText : fetchedTitle,
+            url: trimmedURL,
+            title: fetchedTitle.isEmpty ? trimmedURL : fetchedTitle,
             imageData: fetchedImageData,
             category: category,
             note: note,
@@ -142,6 +189,9 @@ struct AddLinkView: View {
             tags: selectedTags
         )
         modelContext.insert(link)
+        if addToUpNext {
+            UpNext.toggle(link, pinned: pinned)
+        }
         dismiss()
     }
 }
