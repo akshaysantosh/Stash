@@ -7,6 +7,7 @@ struct LinksListView: View {
     @Query private var links: [SavedLink]
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @EnvironmentObject private var toasts: ToastCenter
     @AppStorage("sortOldestFirst") private var sortOldestFirst = false
     @State private var showingAddLink = false
     @State private var selectedCategory: Category?
@@ -102,6 +103,7 @@ struct LinksListView: View {
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
+            ScrollViewReader { proxy in
             List {
                 header
                     .listRowBackground(Color.clear)
@@ -133,12 +135,22 @@ struct LinksListView: View {
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
             .contentMargins(.bottom, isDone ? AppSpacing.l : 88, for: .scrollContent)
+            // After adding a link: scroll to it and let its row glow briefly.
+            .onChange(of: toasts.highlightedID) { _, id in
+                if let id { withAnimation(.snappy) { proxy.scrollTo(id, anchor: .center) } }
+            }
+            }
 
             if !isDone {
                 FloatingAddButton { showingAddLink = true }
                     .padding(.trailing, AppSpacing.l + AppSpacing.xs)
                     .padding(.bottom, AppSpacing.l)
             }
+
+            // Last child of the ZStack, so it is on top for touches as well as for drawing.
+            ToastLayer(center: toasts)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .zIndex(10)
         }
         .background(PaperBackground())
         .navigationTitle(title)
@@ -277,7 +289,9 @@ struct LinksListView: View {
             } label: { EmptyView() }
             .opacity(0)
         }
-        .listRowBackground(Color.clear)
+        .id(link.id)
+        .listRowBackground(toasts.highlightedID == link.id ? Color.accent.opacity(0.14) : Color.clear)
+        .animation(.easeOut(duration: 0.6), value: toasts.highlightedID)
         .listRowSeparatorTint(Color.borderCard)
         .listRowInsets(EdgeInsets(top: AppSpacing.m, leading: AppSpacing.l, bottom: AppSpacing.m, trailing: AppSpacing.l))
         .alignmentGuide(.listRowSeparatorLeading) { _ in
@@ -285,7 +299,7 @@ struct LinksListView: View {
         }
         .swipeActions(edge: .leading) {
             Button {
-                link.toggleDone()
+                LinkActions.toggleDone(link, toasts: toasts)
             } label: {
                 Label(link.isDone ? "Reopen" : "Done", systemImage: link.isDone ? "arrow.uturn.left" : "checkmark")
             }
@@ -301,7 +315,7 @@ struct LinksListView: View {
         }
         .swipeActions(edge: .trailing) {
             Button(role: .destructive) {
-                modelContext.delete(link)
+                LinkActions.delete(link, in: modelContext, toasts: toasts)
             } label: {
                 Label("Delete", systemImage: "trash")
             }
@@ -316,12 +330,12 @@ struct LinksListView: View {
                 }
             }
             Button {
-                link.toggleDone()
+                LinkActions.toggleDone(link, toasts: toasts)
             } label: {
                 Label(link.isDone ? "Reopen" : "Mark done", systemImage: link.isDone ? "arrow.uturn.left" : "checkmark")
             }
             Button(role: .destructive) {
-                modelContext.delete(link)
+                LinkActions.delete(link, in: modelContext, toasts: toasts)
             } label: {
                 Label("Delete", systemImage: "trash")
             }

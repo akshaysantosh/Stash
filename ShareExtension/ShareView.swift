@@ -20,6 +20,15 @@ struct ShareView: View {
     @State private var selectedTags: [String] = []
     @State private var saveError: String?
     @State private var addToUpNext = false
+    @State private var didSave = false
+    /// How long the "Stashed" celebration shows before the extension closes (longer in debug builds).
+    private var celebrationSeconds: Double {
+        #if DEBUG
+        4.0   // debug builds linger so the animation can be inspected; release closes after 1s
+        #else
+        1.0
+        #endif
+    }
 
     var body: some View {
         NavigationStack {
@@ -32,9 +41,23 @@ struct ShareView: View {
                     }
                     ToolbarItem(placement: .confirmationAction) {
                         Button("Save", action: save)
-                            .disabled(sharedURL == nil || isFetchingMetadata)
+                            .disabled(sharedURL == nil || isFetchingMetadata || didSave)
                     }
                 }
+        }
+        .overlay {
+            if didSave {
+                ZStack {
+                    PaperBackground()
+                    VStack(spacing: AppSpacing.l) {
+                        SavedBurst()
+                        Text(addToUpNext ? "Stashed and pinned" : "Stashed")
+                            .font(AppFont.cardHeadline())
+                            .foregroundStyle(Color.ink)
+                    }
+                }
+                .transition(.opacity)
+            }
         }
         .task {
             loadAvailableTags()
@@ -261,7 +284,10 @@ struct ShareView: View {
                 UpNext.toggle(link, pinned: (try? context.fetch(descriptor)) ?? [])
             }
             try context.save()
-            onFinish()
+            // A little celebration, then close.
+            Haptics.added()
+            withAnimation(.easeOut(duration: 0.2)) { didSave = true }
+            DispatchQueue.main.asyncAfter(deadline: .now() + celebrationSeconds) { onFinish() }
         } catch {
             saveError = "Couldn't save: \(error.localizedDescription)"
         }

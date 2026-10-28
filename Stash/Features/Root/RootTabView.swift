@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct RootTabView: View {
+    @StateObject private var toasts = ToastCenter()
+
     var body: some View {
         TabView {
             NavigationStack {
@@ -14,5 +16,6 @@ struct RootTabView: View {
             .tabItem { Label("Vault", systemImage: "archivebox.fill") }
         }
         .tint(Color.accent)
+        .environmentObject(toasts)
     }
 }

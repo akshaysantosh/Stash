@@ -7,6 +7,7 @@ struct LinkDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
+    @EnvironmentObject private var toasts: ToastCenter
     @State private var showingDeleteConfirm = false
     @State private var showingEdit = false
     @Query(filter: #Predicate<SavedLink> { $0.upNextAt != nil && $0.isDone == false }) private var pinned: [SavedLink]
@@ -73,6 +74,7 @@ struct LinkDetailView: View {
             .padding(AppSpacing.l)
         }
         .background(PaperBackground())
+        .toastHost(toasts)
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -92,7 +94,7 @@ struct LinkDetailView: View {
                         }
                     }
                     Button {
-                        link.toggleDone()
+                        LinkActions.toggleDone(link, toasts: toasts)
                     } label: {
                         Label(link.isDone ? "Move back to Stash" : "Mark done",
                               systemImage: link.isDone ? "arrow.uturn.left" : "checkmark.circle")
@@ -115,8 +117,8 @@ struct LinkDetailView: View {
         }
         .confirmationDialog("Delete this link?", isPresented: $showingDeleteConfirm, titleVisibility: .visible) {
             Button("Delete", role: .destructive) {
-                modelContext.delete(link)
                 dismiss()
+                LinkActions.delete(link, in: modelContext, toasts: toasts)
             }
         }
     }

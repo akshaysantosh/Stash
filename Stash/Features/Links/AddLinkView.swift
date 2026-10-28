@@ -5,6 +5,7 @@ import UIKit
 struct AddLinkView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var toasts: ToastCenter
     @Query private var allLinks: [SavedLink]
     @Query(filter: #Predicate<SavedLink> { $0.upNextAt != nil && $0.isDone == false }) private var pinned: [SavedLink]
 
@@ -192,6 +193,11 @@ struct AddLinkView: View {
         if addToUpNext {
             UpNext.toggle(link, pinned: pinned)
         }
+        // Feedback: a success haptic now, then — once the sheet has finished closing — the toast and
+        // a glow on the new row.
+        Haptics.added()
+        toasts.show(Toast(kind: .added, message: addToUpNext ? "Stashed and pinned" : "Stashed"), after: 0.45)
+        toasts.highlight(link.id, after: 0.45)
         dismiss()
     }
 }
